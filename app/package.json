@@ -1,7 +1,9 @@
 {
-  "name": "my-threejs-app",
+  "name": "transcendence",
   "version": "0.1.0",
   "private": true,
+  "author": "0xpekenbower",
+  "git": "https://github.com/0xpekenbower/42-transcendence/tree/frontend",
   "scripts": {
     "dev": "next dev ",
     "build": "next build",
