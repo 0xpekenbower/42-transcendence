@@ -1,0 +1,24 @@
+# Node.js
+node_modules/
+
+# Next.js
+.next/
+
+# Django
+*.pyc
+__pycache__/
+db.sqlite3
+
+# Environment variables
+.env
+data/
+
+# SSL Certificates
+ssl/cert.pem
+ssl/key.pem
+
+# TODO
+TODO.txt
+
+# .vscode
+.vscode/

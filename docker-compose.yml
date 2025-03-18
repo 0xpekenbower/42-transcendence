@@ -1,0 +1,96 @@
+services:
+  frontend:
+    container_name: frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: frontend:aelmrabe
+    restart: unless-stopped
+    networks:
+      - transcendence
+    env_file:
+      - .env
+    expose:
+      - "3000"
+    # ports:
+    #   - "3000:3000"
+    volumes:
+      - ./frontend/app:/app
+      - /app/node_modules
+      - /app/.next
+
+  backend:
+    container_name: backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: backend:aelmrabe
+    restart: unless-stopped
+    networks:
+      - transcendence
+    env_file:
+      - .env
+    expose:
+      - "8000"
+    # ports:
+    #   - "8000:8000"
+    volumes:
+      - ./backend/app:/app
+    depends_on:
+      - postgres
+
+  postgres:
+    container_name: postgres
+    image: postgres:aelmrabe
+    build:
+      context: ./infra/postgres
+      dockerfile: Dockerfile
+    restart: always
+    networks:
+      - transcendence
+    env_file:
+      - .env
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  nginx:
+    build:
+      context: ./infra/nginx
+      dockerfile: Dockerfile
+    image: nginx:aelmrabe
+    container_name: nginx
+    ports:
+      # - "443:443"
+      - "8443:443"
+    depends_on:
+      - frontend
+      - backend
+    env_file:
+      - .env
+    networks:
+      - transcendence
+    restart: always
+    volumes:
+      - ./ssl/cert.pem:/etc/nginx/ssl/cert.pem:ro
+      - ./ssl/key.pem:/etc/nginx/ssl/key.pem:ro
+
+networks:
+  transcendence:
+    name: transcendence
+    driver: bridge
+
+volumes:
+  postgres_data:
+    name: postgres_data
+    driver: local
+    driver_opts:
+      type: none
+      device: ./data/postgresdb
+      o: bind
