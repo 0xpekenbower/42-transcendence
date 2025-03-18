@@ -59,7 +59,6 @@ jobs:
           cp -r ./app /tmp/main_f/frontend/app
           cd /tmp/main_f
           git add .
-          git config --local commit.gpgsign false
           git commit -m "${{ env.COMMIT_TITLE }}"
           git push origin main
           rm -rf /tmp/main_f
