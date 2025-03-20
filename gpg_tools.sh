@@ -3,8 +3,6 @@
 set -e
 # Files to encrypt/decrypt
 ENV_FILE=".env"
-SSL_KEY="./ssl/key.pem"
-SSL_CERT="./ssl/cert.pem"
 
 # Default recipient for public key encryption
 DEFAULT_RECIPIENT="elmrabet.abdellah11@gmail.com"
@@ -25,6 +23,7 @@ encrypt_file() {
     if [ $? -eq 0 ]; then
         echo "Successfully encrypted $file to $output"
         chmod 600 "$output"
+        rm "$file"
     else
         echo "Failed to encrypt $file"
         exit 1
@@ -47,6 +46,7 @@ decrypt_file() {
     if [ $? -eq 0 ]; then
         echo "Successfully decrypted $encrypted_file to $output"
         chmod 600 "$output"
+        rm "$encrypted_file"
     else
         echo "Failed to decrypt $encrypted_file"
         exit 1
@@ -56,15 +56,11 @@ decrypt_file() {
 # Function to encrypt all files
 encrypt_all() {
     encrypt_file "$ENV_FILE"
-    encrypt_file "$SSL_KEY"
-    encrypt_file "$SSL_CERT"
 }
 
 # Function to decrypt all files
 decrypt_all() {
     decrypt_file "$ENV_FILE"
-    decrypt_file "$SSL_KEY"
-    decrypt_file "$SSL_CERT"
 }
 
 # Main script logic
