@@ -21,21 +21,18 @@ services:
     container_name: nginx
     image: ghcr.io/0xpekenbower/42-transcendence/nginx:latest
     ports:
-      - "5005:443"
+      - "8080:80"
     env_file:
       - ./infra/.env
     networks:
       - transcendence
     restart: always
-    volumes:
-      - ./infra/nginx/ssl/cert.pem:/etc/nginx/ssl/cert.pem:ro
-      - ./infra/nginx/ssl/key.pem:/etc/nginx/ssl/key.pem:ro
 
 networks:
   transcendence:
     name: transcendence
     driver: bridge
-    
+
 volumes:
   postgres_data:
     name: postgres_data
