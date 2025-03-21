@@ -21,7 +21,7 @@ services:
     container_name: nginx
     image: ghcr.io/0xpekenbower/42-transcendence/nginx:latest
     ports:
-      - "443:443"
+      - "4443:443"
     env_file:
       - ./infra/.env
     networks:
