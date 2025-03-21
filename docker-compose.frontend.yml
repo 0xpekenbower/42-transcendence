@@ -1,7 +1,10 @@
 services:
   frontend:
     container_name: frontend
-    image: ghcr.io/0xpekenbower/42-transcendence/frontend:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: frontend:latest
     restart: unless-stopped
     networks:
       - transcendence
@@ -11,8 +14,6 @@ services:
       - "3000:3000"
     volumes:
       - ./app:/app
-      - /app/node_modules
-      - /app/.next
 
 networks:
   transcendence:

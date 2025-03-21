@@ -80,10 +80,6 @@ jobs:
         run: |
           docker compose -f docker-compose.frontend.yml down || true
 
-      - name: Pull latest frontend image
-        run: |
-          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/frontend:latest
-
       - name: Start frontend with Docker Compose
         run: |
           docker compose -f docker-compose.frontend.yml up -d
