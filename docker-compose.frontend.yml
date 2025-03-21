@@ -7,8 +7,8 @@ services:
       - transcendence
     env_file:
       - app/.env
-    expose:
-      - "3000"
+    ports:
+      - "3000:3000"
     volumes:
       - ./app:/app
       - /app/node_modules
