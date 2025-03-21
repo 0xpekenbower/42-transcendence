@@ -100,8 +100,6 @@ jobs:
           rm -rf /tmp/main_b/backend/app
           cp -r ./app /tmp/main_b/backend/app
           cd /tmp/main_b
-          git config user.name "${{ env.COMMIT_AUTHOR }}"
-          git config user.email "${{ env.COMMIT_AUTHOR_EMAIL }}"
           ./gpg_tools.sh encrypt
           git add .
           git commit -m "${{ env.COMMIT_TITLE }}"
