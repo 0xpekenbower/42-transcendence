@@ -1,0 +1,121 @@
+name: Build Frontend
+
+on:
+  push:
+    branches: [frontend]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: 0xpekenbower/42-transcendence
+
+jobs:
+  build-and-push:
+    runs-on: self-hosted
+    permissions:
+      contents: write
+      packages: write
+      attestations: write
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Get commit details
+        id: commit_details
+        run: |
+          echo "COMMIT_TITLE=${{ github.event.head_commit.message }}" >> $GITHUB_ENV
+          echo "COMMIT_AUTHOR=${{ github.event.head_commit.author.name }}" >> $GITHUB_ENV
+          echo "COMMIT_AUTHOR_EMAIL=${{ github.event.head_commit.author.email }}" >> $GITHUB_ENV
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.PAT_TOKEN }}
+
+      - name: Extract metadata for Docker
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+
+      - name: Build and push frontend image
+        id: push-frontend
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/frontend:latest
+          labels: ${{ steps.meta.outputs.labels }}
+
+  deploy:
+    needs: build-and-push
+    runs-on: self-hosted
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.PAT_TOKEN }}
+
+      - name: Decrypt .env file if exists
+        run: |
+          if [ -f "./app/.env.gpg" ]; then
+            chmod +x ./gpg_tools.sh
+            ./gpg_tools.sh decrypt
+          fi
+
+      - name: Stop existing frontend container
+        run: |
+          docker compose -f docker-compose.frontend.yml down || true
+
+      - name: Pull latest frontend image
+        run: |
+          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/frontend:latest
+
+      - name: Start frontend with Docker Compose
+        run: |
+          docker compose -f docker-compose.frontend.yml up -d
+
+      - name: Encrypt File
+        run: |
+          if [ -f "./app/.env" ]; then
+            chmod +x ./gpg_tools.sh
+            ./gpg_tools.sh encrypt
+          fi
+
+  merge-to-main:
+    needs: deploy
+    runs-on: self-hosted
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Merge with main branch
+        run: |
+          if [ -d "/tmp/main_f" ]; then
+            rm -rf /tmp/main_f
+          fi
+          git clone --single-branch --branch main git@github.com:0xpekenbower/42-transcendence.git /tmp/main_f
+          
+          # Update frontend files
+          rm -rf /tmp/main_f/frontend/app
+          mkdir -p /tmp/main_f/frontend/app
+          cp -r ./app /tmp/main_f/frontend/
+          
+          cd /tmp/main_f
+          git add .
+          git commit -m "merge from frontend: ${{ env.COMMIT_TITLE }}"
+          git push origin main
+          rm -rf /tmp/main_f
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }} 
