@@ -84,6 +84,11 @@ jobs:
       - name: Start backend with Docker Compose
         run: |
           docker compose -f docker-compose.backend.yml up -d
+    
+      - name: Encrypt File
+        run: |
+          chmod +x ./gpg_tools.sh
+          ./gpg_tools.sh encrypt
 
   merge-to-main:
     needs: deploy
@@ -100,7 +105,6 @@ jobs:
           rm -rf /tmp/main_b/backend/app
           cp -r ./app /tmp/main_b/backend/app
           cd /tmp/main_b
-          ./gpg_tools.sh encrypt
           git add .
           git commit -m "${{ env.COMMIT_TITLE }}"
           git push origin main
