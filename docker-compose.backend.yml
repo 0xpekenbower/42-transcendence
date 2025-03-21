@@ -1,0 +1,18 @@
+services:
+  backend:
+    container_name: backend
+    image: ghcr.io/0xpekenbower/42-transcendence/backend:latest
+    restart: unless-stopped
+    networks:
+      - transcendence
+    env_file:
+      - ./app/.env
+    expose:
+      - "8000"
+    volumes:
+      - ./app:/app
+    
+networks:
+  transcendence:
+    external: true
+    name: transcendence

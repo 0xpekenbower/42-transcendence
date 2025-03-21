@@ -2,7 +2,7 @@
 
 set -e
 # Files to encrypt/decrypt
-ENV_FILE=".env"
+ENV_FILE="app/.env"
 
 # Default recipient for public key encryption
 DEFAULT_RECIPIENT="elmrabet.abdellah11@gmail.com"

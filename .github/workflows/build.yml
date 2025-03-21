@@ -1,4 +1,4 @@
-name: Publish
+name: Build
 
 on:
   push:
@@ -52,16 +52,53 @@ jobs:
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/backend:latest
           labels: ${{ steps.meta.outputs.labels }}
 
+  deploy:
+    needs: build-and-push
+    runs-on: self-hosted
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Decrypt .env file if exists
+        run: |
+          if [ -f "./app/.env.gpg" ]; then
+            chmod +x ./gpg_tools.sh
+            ./gpg_tools.sh decrypt
+          fi
+
+      - name: Stop existing backend container
+        run: |
+          docker compose -f docker-compose.backend.yml down || true
+
+      - name: Pull latest backend image
+        run: |
+          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/backend:latest
+
+      - name: Start backend with Docker Compose
+        run: |
+          docker compose -f docker-compose.backend.yml up -d
+
+  merge-to-main:
+    needs: deploy
+    runs-on: self-hosted
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Merge with main branch
         run: |
           git clone --single-branch --branch main git@github.com:0xpekenbower/42-transcendence.git /tmp/main_b
           rm -rf /tmp/main_b/backend/app
           cp -r ./app /tmp/main_b/backend/app
           cd /tmp/main_b
+          git config user.name "${{ env.COMMIT_AUTHOR }}"
+          git config user.email "${{ env.COMMIT_AUTHOR_EMAIL }}"
+          ./gpg_tools.sh encrypt
           git add .
           git commit -m "${{ env.COMMIT_TITLE }}"
           git push origin main
           rm -rf /tmp/main_b
         env:
           GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
-    
