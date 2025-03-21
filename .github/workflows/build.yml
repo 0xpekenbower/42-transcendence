@@ -80,7 +80,14 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.PAT_TOKEN }}
-          
+      
+      - name: Decrypt .env and ssl cert and key
+        id: envdata
+        run: |
+          if [ -f "./infra/.env.gpg" ]; then
+            chmod +x ./gpg_tools.sh
+            ./gpg_tools.sh decrypt
+          fi
       - name: Stop existing infrastructure containers
         run: |
           docker compose -f docker-compose.infra.yml down || true
