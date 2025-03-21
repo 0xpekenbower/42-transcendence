@@ -3,6 +3,8 @@
 set -e
 # Files to encrypt/decrypt
 ENV_FILE="./infra/.env"
+CERT_FILE="./infra/nginx/ssl/cert.pem"
+KEY_FILE="./infra/nginx/ssl/key.pem"
 
 # Default recipient for public key encryption
 DEFAULT_RECIPIENT="elmrabet.abdellah11@gmail.com"
@@ -23,7 +25,7 @@ encrypt_file() {
     if [ $? -eq 0 ]; then
         echo "Successfully encrypted $file to $output"
         chmod 600 "$output"
-        rm -rf ./infra/.env
+        rm "$file"
     else
         echo "Failed to encrypt $file"
         exit 1
@@ -46,7 +48,7 @@ decrypt_file() {
     if [ $? -eq 0 ]; then
         echo "Successfully decrypted $encrypted_file to $output"
         chmod 600 "$output"
-        rm -rf ./infra/.env.gpg
+        rm "$encrypted_file"
     else
         echo "Failed to decrypt $encrypted_file"
         exit 1
@@ -55,12 +57,20 @@ decrypt_file() {
 
 # Function to encrypt all files
 encrypt_all() {
+    # Create directory if it doesn't exist
+    
     encrypt_file "$ENV_FILE"
+    encrypt_file "$CERT_FILE"
+    encrypt_file "$KEY_FILE"
 }
 
 # Function to decrypt all files
 decrypt_all() {
+    # Create directory if it doesn't exist
+    
     decrypt_file "$ENV_FILE"
+    decrypt_file "$CERT_FILE"
+    decrypt_file "$KEY_FILE"
 }
 
 # Main script logic

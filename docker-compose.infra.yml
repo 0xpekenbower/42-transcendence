@@ -27,6 +27,9 @@ services:
     networks:
       - transcendence
     restart: always
+    volumes:
+      - ./infra/nginx/ssl/cert.pem:/etc/nginx/ssl/cert.pem:ro
+      - ./infra/nginx/ssl/key.pem:/etc/nginx/ssl/key.pem:ro
 
 networks:
   transcendence:
