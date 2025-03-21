@@ -2,9 +2,10 @@ FROM node:22-alpine3.20
 
 WORKDIR /app
 
-COPY package*.json ./
+COPY app/package*.json ./
 RUN npm install --legacy-peer-deps --loglevel=error
 
-COPY . .
+COPY app/. .
+# RUN npm run build
 
 CMD ["npm", "run", "dev"]

@@ -45,21 +45,16 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
 
-      - name: Build and push frontend image
-        id: push-frontend
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: Dockerfile
-          push: true
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/frontend:latest
-          labels: ${{ steps.meta.outputs.labels }}
+      - name: Build and push frontend image with Docker Compose
+        run: |
+          docker-compose -f docker-compose.frontend.yml build
+          docker tag frontend:latest ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/frontend:latest
+          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/frontend:latest
 
   deploy:
     needs: build-and-push
     runs-on: self-hosted
     steps:
-
       - name: switch branch
         run: |
           git switch frontend
@@ -131,4 +126,4 @@ jobs:
           git push origin main
           rm -rf /tmp/main_f
         env:
-          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }} 
+          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
