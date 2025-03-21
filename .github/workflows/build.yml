@@ -47,7 +47,7 @@ jobs:
 
       - name: Build and push frontend image with Docker Compose
         run: |
-          docker-compose -f docker-compose.frontend.yml build
+          docker compose -f docker-compose.frontend.yml build
           docker tag frontend:latest ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/frontend:latest
           docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/frontend:latest
 
