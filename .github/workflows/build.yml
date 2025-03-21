@@ -109,7 +109,7 @@ jobs:
           cp -r ./app /tmp/main_b/backend/app
           cd /tmp/main_b
           git add .
-          git commit -m "${{ env.COMMIT_TITLE }}"
+          git commit -m "merge from backend ${{ github.event.head_commit.message }}"
           git push origin main
           rm -rf /tmp/main_b
         env:
