@@ -101,6 +101,9 @@ jobs:
 
       - name: Merge with main branch
         run: |
+          if [ -d "/tmp/main_b" ]; then
+            rm -rf /tmp/main_b
+          fi
           git clone --single-branch --branch main git@github.com:0xpekenbower/42-transcendence.git /tmp/main_b
           rm -rf /tmp/main_b/backend/app
           cp -r ./app /tmp/main_b/backend/app
