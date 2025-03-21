@@ -18,6 +18,11 @@ jobs:
       id-token: write
 
     steps:
+
+      - name: switch branch
+        run: |
+          git switch infra
+
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -71,6 +76,10 @@ jobs:
     needs: build-and-push
     runs-on: self-hosted
     steps:
+      - name: switch branch
+        run: |
+          git switch infra
+
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -111,9 +120,14 @@ jobs:
     runs-on: self-hosted
     permissions:
       contents: write
+  
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+      
+      - name: switch branch
+        run: |
+          git switch infra
 
       - name: Merge with main branch
         run: |
