@@ -1,0 +1,135 @@
+name: Build Infrastructure Services
+
+on:
+  push:
+    branches: [infra]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: 0xpekenbower/42-transcendence
+
+jobs:
+  build-and-push:
+    runs-on: self-hosted
+    permissions:
+      contents: write
+      packages: write
+      attestations: write
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Get commit details
+        id: commit_details
+        run: |
+          echo "COMMIT_TITLE=${{ github.event.head_commit.message }}" >> $GITHUB_ENV
+          echo "COMMIT_AUTHOR=${{ github.event.head_commit.author.name }}" >> $GITHUB_ENV
+          echo "COMMIT_AUTHOR_EMAIL=${{ github.event.head_commit.author.email }}" >> $GITHUB_ENV
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.PAT_TOKEN }}
+
+      - name: Extract metadata for Docker
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+
+      - name: Build and push Nginx image
+        id: push-nginx
+        uses: docker/build-push-action@v5
+        with:
+          context: ./infra/nginx
+          file: ./infra/nginx/dockerfile
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/nginx:latest
+          labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Build and push PostgreSQL image
+        id: push-postgres
+        uses: docker/build-push-action@v5
+        with:
+          context: ./infra/postgres
+          file: ./infra/postgres/Dockerfile
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/postgres:latest
+          labels: ${{ steps.meta.outputs.labels }}
+
+  deploy:
+    needs: build-and-push
+    runs-on: self-hosted
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.PAT_TOKEN }}
+
+      - name: Decrypt .env file if exists
+        run: |
+          if [ -f "./infra/.env.gpg" ]; then
+            chmod +x ./gpg_tools.sh
+            ./gpg_tools.sh decrypt
+          fi
+
+      - name: Stop existing infrastructure containers
+        run: |
+          docker compose -f docker-compose.infra.yml down || true
+
+      - name: Pull latest infrastructure images
+        run: |
+          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/nginx:latest
+          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/postgres:latest
+
+      - name: Start infrastructure with Docker Compose
+        run: |
+          docker compose -f docker-compose.infra.yml up -d
+
+      - name: Encrypt File
+        run: |
+          chmod +x ./gpg_tools.sh
+          ./gpg_tools.sh encrypt
+
+  merge-to-main:
+    needs: deploy
+    runs-on: self-hosted
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Merge with main branch
+        run: |
+          if [ -d "/tmp/main_i" ]; then
+            rm -rf /tmp/main_i
+          fi
+          git clone --single-branch --branch main git@github.com:0xpekenbower/42-transcendence.git /tmp/main_i
+          
+          # Update nginx files
+          rm -rf /tmp/main_i/infra/nginx
+          mkdir -p /tmp/main_i/infra/nginx
+          cp -r ./infra/nginx/* /tmp/main_i/infra/nginx/
+          
+          # Update postgres files
+          rm -rf /tmp/main_i/infra/postgres
+          mkdir -p /tmp/main_i/infra/postgres
+          cp -r ./infra/postgres/* /tmp/main_i/infra/postgres/
+          
+          cd /tmp/main_i
+          git add .
+          git commit -m "merge from infra: ${{ env.COMMIT_TITLE }}"
+          git push origin main
+          rm -rf /tmp/main_i
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
