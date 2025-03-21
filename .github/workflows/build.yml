@@ -97,13 +97,12 @@ jobs:
     permissions:
       contents: write
     steps:
-      - name: switch branch
-        run: |
-          git switch frontend
+      # - name: switch branch
+      #   run: |
+      #     git switch frontend
 
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
+      # - name: Checkout repository
+      #   uses: actions/checkout@v4
       - name: Merge with main branch
         run: |
           if [ -d "/tmp/main_f" ]; then
