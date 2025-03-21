@@ -40,7 +40,13 @@ jobs:
         uses: docker/metadata-action@v4
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-      
+      - name: Decrypt .env and ssl cert and key
+        id: envdata
+        run: |
+          if [ -f "./infra/.env.gpg" ]; then
+            chmod +x ./gpg_tools.sh
+            ./gpg_tools.sh decrypt
+          fi
       - name: Build and push Nginx image
         id: push-nginx
         uses: docker/build-push-action@v5
@@ -74,14 +80,7 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.PAT_TOKEN }}
-
-      - name: Decrypt .env file if exists
-        run: |
-          if [ -f "./infra/.env.gpg" ]; then
-            chmod +x ./gpg_tools.sh
-            ./gpg_tools.sh decrypt
-          fi
-
+          
       - name: Stop existing infrastructure containers
         run: |
           docker compose -f docker-compose.infra.yml down || true
