@@ -16,6 +16,9 @@ jobs:
         run: |
           chmod +x ./gpg_tools.sh
           ./gpg_tools.sh decrypt
+      - name: Stop All Services
+        run: |
+          make fclean || true
 
       - name: Deploy using Makefile
         run: |
