@@ -1,0 +1,69 @@
+---
+- name: Deploy Transcendence Application
+  hosts: production
+  become: yes
+  vars:
+    app_dir: /opt/transcendence
+    repo_url: https://github.com/yourusername/transcendence.git
+
+  tasks:
+    - name: Ensure git is installed
+      apt:
+        name: git
+        state: present
+        update_cache: yes
+
+    - name: Ensure docker and docker-compose are installed
+      apt:
+        name:
+          - docker.io
+          - docker-compose
+        state: present
+
+    - name: Ensure app directory exists
+      file:
+        path: "{{ app_dir }}"
+        state: directory
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: '0755'
+
+    - name: Clone or update repository
+      git:
+        repo: "{{ repo_url }}"
+        dest: "{{ app_dir }}"
+        version: main
+        force: yes
+      become_user: "{{ ansible_user }}"
+
+    - name: Copy .env file
+      copy:
+        src: ../.env
+        dest: "{{ app_dir }}/.env"
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: '0600'
+
+    - name: Ensure data directories exist
+      file:
+        path: "{{ app_dir }}/{{ item }}"
+        state: directory
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: '0755'
+      with_items:
+        - data
+        - data/postgresdb
+
+    - name: Build and start containers
+      docker_compose:
+        project_src: "{{ app_dir }}"
+        build: yes
+        state: present
+      become_user: "{{ ansible_user }}"
+
+    - name: Ensure docker service is enabled
+      systemd:
+        name: docker
+        enabled: yes
+        state: started 

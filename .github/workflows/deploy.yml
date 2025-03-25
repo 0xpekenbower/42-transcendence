@@ -1,0 +1,83 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          pip3 install ansible
+
+      - name: Decrypt .env file
+        run: |
+          chmod +x ./gpg_tools.sh
+          ./gpg_tools.sh decrypt
+          
+      - name: Create ansible directory if it doesn't exist
+        run: mkdir -p ansible
+
+      - name: Create inventory file
+        run: |
+          cat > ansible/inventory.ini << 'EOL'
+          [production]
+          localhost ansible_connection=local
+
+          [all:vars]
+          ansible_python_interpreter=/usr/bin/python3
+          EOL
+
+      - name: Create deploy playbook
+        run: |
+          cat > ansible/deploy.yml << 'EOL'
+          ---
+          - name: Deploy Transcendence Application
+            hosts: production
+            become: yes
+            vars:
+              app_dir: "{{ playbook_dir }}/.."
+
+            tasks:
+              - name: Ensure docker and docker-compose are installed
+                apt:
+                  name:
+                    - docker.io
+                    - docker-compose
+                  state: present
+                  update_cache: yes
+
+              - name: Ensure data directories exist
+                file:
+                  path: "{{ app_dir }}/{{ item }}"
+                  state: directory
+                  mode: '0755'
+                with_items:
+                  - data
+                  - data/postgresdb
+
+              - name: Build and start containers
+                community.docker.docker_compose:
+                  project_src: "{{ app_dir }}"
+                  build: yes
+                  pull: yes
+                  recreate: always
+
+              - name: Ensure docker service is enabled
+                systemd:
+                  name: docker
+                  enabled: yes
+                  state: started
+          EOL
+
+      - name: Run Ansible playbook
+        run: |
+          cd ansible
+          ansible-playbook -i inventory.ini deploy.yml 
