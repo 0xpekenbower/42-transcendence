@@ -3,8 +3,6 @@
 set -e
 # Files to encrypt/decrypt
 ENV_FILE=".env"
-SSL_KEY="./ssl/key.pem"
-SSL_CERT="./ssl/cert.pem"
 
 # Default recipient for public key encryption
 DEFAULT_RECIPIENT="elmrabet.abdellah11@gmail.com"
@@ -56,15 +54,11 @@ decrypt_file() {
 # Function to encrypt all files
 encrypt_all() {
     encrypt_file "$ENV_FILE"
-    encrypt_file "$SSL_KEY"
-    encrypt_file "$SSL_CERT"
 }
 
 # Function to decrypt all files
 decrypt_all() {
     decrypt_file "$ENV_FILE"
-    decrypt_file "$SSL_KEY"
-    decrypt_file "$SSL_CERT"
 }
 
 # Main script logic

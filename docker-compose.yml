@@ -10,10 +10,8 @@ services:
       - transcendence
     env_file:
       - .env
-    expose:
-      - "3000"
-    # ports:
-    #   - "3000:3000"
+    ports:
+      - "3000:3000"
     volumes:
       - ./frontend/app:/app
       - /app/node_modules
@@ -30,14 +28,13 @@ services:
       - transcendence
     env_file:
       - .env
-    expose:
-      - "8000"
-    # ports:
-    #   - "8000:8000"
+    ports:
+      - "8000:8000"
     volumes:
       - ./backend/app:/app
     depends_on:
       - postgres
+      - redis
 
   postgres:
     container_name: postgres
@@ -60,26 +57,38 @@ services:
       timeout: 5s
       retries: 5
 
-  nginx:
-    build:
-      context: ./infra/nginx
-      dockerfile: Dockerfile
-    image: nginx:aelmrabe
-    container_name: nginx
-    ports:
-      # - "443:443"
-      - "8443:443"
-    depends_on:
-      - frontend
-      - backend
-    env_file:
-      - .env
+  redis:
+    container_name: redis
+    image: redis:7-alpine
+    restart: always
     networks:
       - transcendence
-    restart: always
+    ports:
+      - "6379:6379"
     volumes:
-      - ./ssl/cert.pem:/etc/nginx/ssl/cert.pem:ro
-      - ./ssl/key.pem:/etc/nginx/ssl/key.pem:ro
+      - redis_data:/data
+    command: redis-server --save 60 1 --loglevel warning
+
+  # nginx:
+  #   build:
+  #     context: ./infra/nginx
+  #     dockerfile: Dockerfile
+  #   image: nginx:aelmrabe
+  #   container_name: nginx
+  #   ports:
+  #     # - "443:443"
+  #     - "8443:443"
+  #   depends_on:
+  #     - frontend
+  #     - backend
+  #   env_file:
+  #     - .env
+  #   networks:
+  #     - transcendence
+  #   restart: always
+  #   volumes:
+  #     - ./ssl/cert.pem:/etc/nginx/ssl/cert.pem:ro
+  #     - ./ssl/key.pem:/etc/nginx/ssl/key.pem:ro
 
 networks:
   transcendence:
@@ -94,3 +103,5 @@ volumes:
       type: none
       device: ./data/postgresdb
       o: bind
+  redis_data:
+    name: redis_data

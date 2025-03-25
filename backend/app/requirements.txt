@@ -12,3 +12,4 @@ pyjwt
 cryptography
 pyotp
 Pillow
+psycopg2-binary
