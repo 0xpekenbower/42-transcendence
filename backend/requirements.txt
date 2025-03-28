@@ -1,0 +1,13 @@
+Django
+channels
+daphne
+djangorestframework
+djangorestframework-simplejwt 
+django-cors-headers
+django-oauth-toolkit
+requests
+python-decouple
+pyjwt
+cryptography
+pyotp
+Pillow
